@@ -1,0 +1,143 @@
+:root {
+  /* 背景色 */
+  --bg-primary: #f5f5f0;
+  --bg-secondary: #e8e4dc;
+
+  /* 棋盘色 */
+  --board-color: #deb887;
+  --board-line: #5c4033;
+
+  /* 棋子色 */
+  --piece-black: #1a1a1a;
+  --piece-white: #fefefe;
+
+  /* 强调色 */
+  --accent: #c41e3a;
+  --text-primary: #2d2d2d;
+  --text-secondary: #666;
+
+  /* 按钮色 */
+  --btn-bg: #8b4513;
+  --btn-hover: #a0522d;
+
+  /* 字体 */
+  --font-family: 'ZCOOL KuaiLe', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 重置样式 */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#app {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 10px 24px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--btn-bg);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background: var(--btn-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* 玩家指示器 */
+.player-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.player-indicator.active {
+  background: rgba(196, 30, 58, 0.15);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.player-indicator .piece {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.player-indicator .piece.black {
+  background: radial-gradient(circle at 30% 30%, #4a4a4a, var(--piece-black));
+}
+
+.player-indicator .piece.white {
+  background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 获胜提示 */
+.winner-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 30px 50px;
+  border-radius: 16px;
+  font-size: 28px;
+  text-align: center;
+  animation: popIn 0.4s ease;
+  z-index: 100;
+}
+
+@keyframes popIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  #app {
+    padding: 10px;
+  }
+
+  .winner-toast {
+    padding: 20px 30px;
+    font-size: 22px;
+  }
+}
