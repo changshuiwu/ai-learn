@@ -4,13 +4,15 @@
 
 ### 1.1 项目背景
 
-开发一款精美的 HTML5 网页版五子棋（Gomoku）游戏，提供人人对战功能。参考经典五子棋游戏的美学设计，打造视觉优雅、交互流畅的游戏体验。
+开发一款精美的 HTML5 网页版五子棋（Gomoku）游戏，支持**联机对战**功能。玩家可以通过网络实时对战，同时包含倒计时机制。
 
 ### 1.2 核心需求
 
-- **游戏模式**: 双人对战（PVP）- 本地两人在同一设备轮流下棋
+- **游戏模式**: 联机对战（PVP）- 两人通过网络实时对战
+- **通信方式**: WebSocket 实时通信
 - **棋盘**: 15×15 标准五子棋棋盘
-- **胜负判定**: 率先连成五子（横、竖、斜）获胜
+- **胜负判定**: 率先连成五子（横、竖、斜）或超时判负
+- **倒计时**: 思考时间 2 分钟/每次，超时判负
 - **界面**: 精美中国风/现代简约设计
 
 ---
@@ -21,30 +23,56 @@
 
 | 技术 | 用途 |
 |------|------|
-| Vue 3 (Composition API) | 框架 |
+| Vue 3 (Composition API) | 前端框架 |
 | HTML5 Canvas | 棋盘与棋子渲染 |
 | CSS3 | 界面美化、动画效果 |
-| Vite | 构建工具 |
+| Vite | 前端构建工具 |
+| Node.js | 后端运行环境 |
+| ws (WebSocket) | WebSocket 库 |
+| Express | HTTP 服务器 |
 
 ### 2.2 文件结构
 
 ```
 ai-learn/
-└── gomoku/
-    ├── index.html      # 入口页面
-    ├── vite.config.js # Vite 配置
-    ├── package.json   # 依赖配置
-    ├── src/
-    │   ├── main.js    # 入口JS
-    │   ├── App.vue    # 主组件
-    │   ├── components/
-    │   │   └── GameBoard.vue  # 棋盘组件
-    │   ├── composables/
-    │   │   └── gameLogic.js   # 游戏逻辑
-    │   └── style.css  # 全局样式
-    └── public/
-        └── (静态资源)
+├── gomoku/                    # 前端项目
+│   ├── index.html
+│   ├── vite.config.js
+│   ├── package.json
+│   └── src/
+│       ├── main.js
+│       ├── App.vue
+│       ├── components/
+│       │   └── GameBoard.vue
+│       ├── composables/
+│       │   └── gameLogic.js
+│       │   └── websocket.js    # WebSocket 连接
+│       └── style.css
+│
+└── gomoku-server/             # 后端项目
+    ├── package.json
+    ├── index.js              # 服务入口
+    └── game/
+        ├── GameManager.js    # 游戏管理
+        ├── Room.js          # 房间类
+        └── Game.js         # 游戏逻辑
 ```
+
+---
+
+## 二-1、后端技术方案
+
+### 2-1.1 技术栈
+
+| 技术 | 用途 |
+|------|------|
+| Node.js | 运行环境 |
+| ws | WebSocket 库 |
+| express | HTTP 服务（静态文件） |
+
+### 2-1.2 服务端口
+
+- HTTP/WebSocket: 3001
 
 ---
 
@@ -141,7 +169,9 @@ ai-learn/
 | 点击已有棋子 | 无效/忽略 |
 | 游戏结束后点击 | 无效/显示重开按钮 |
 
-### 4.3 胜负判定算法
+### 4.3 胜负判定
+
+#### 4.3.1 五子连珠
 
 检查四个方向：
 1. 水平 (← →)
@@ -150,6 +180,54 @@ ai-learn/
 4. 副对角线 (↗ ↙)
 
 任一方向连续5子即获胜。
+
+#### 4.3.2 超时判负
+
+- 每次落子思考时间：**2 分钟**（120秒）
+- 超时后未落子：判负，对方获胜
+
+---
+
+## 四-1、联机对战协议
+
+### 4-1.1 消息类型
+
+| 消息 | 方向 | 说明 |
+|------|------|------|
+| `create_room` | Client→Server | 创建房间 |
+| `join_room` | Client→Server | 加入房间 |
+| `place_piece` | Client→Server | 落子 |
+| `room_created` | Server→Client | 房间创建成功 |
+| `room_joined` | Server→Client | 加入房间成功 |
+| `game_start` | Server→Client | 游戏开始 |
+| `piece_placed` | Server→Client | 对方落子 |
+| `player_timeout` | Server→Client | 超时判负 |
+| `error` | Server→Client | 错误信息 |
+
+### 4-1.2 消息格式（JSON）
+
+```javascript
+// 创建房间
+{ type: 'create_room', playerName: '玩家名' }
+
+// 加入房间
+{ type: 'join_room', roomId: '房间ID', playerName: '玩家名' }
+
+// 落子
+{ type: 'place_piece', x: 7, y: 7 }
+
+// 房间创建成功
+{ type: 'room_created', roomId: 'ABC123', playerColor: 'black' }
+
+// 游戏开始
+{ type: 'game_start', challenger: '玩家A', challenged: '玩家B', first: 'black' }
+
+// 对方落子
+{ type: 'piece_placed', x: 7, y: 7, color: 'white' }
+
+// 超时判负
+{ type: 'player_timeout', winner: 'black' }
+```
 
 ### 4.4 信息面板内容
 
@@ -192,11 +270,39 @@ npm install
 | `checkWin(x, y)` | 检查胜负 |
 | `switchPlayer()` | 切换玩家 |
 
-### 5.5 步骤五：测试与优化
+### 5.5 步骤五：后端开发
 
-- 检查不同屏幕尺寸显示
-- 验证胜负判定正确性
-- 优化动画流畅度
+#### 5.5.1 创建后端项目
+
+```bash
+mkdir gomoku-server
+cd gomoku-server
+npm init -y
+npm install express ws
+```
+
+#### 5.5.2 编写后端代码
+
+| 文件 | 功能 |
+|------|------|
+| `index.js` | HTTP 服务器 + WebSocket |
+| `game/Game.js` | 游戏逻辑（判断胜负） |
+| `game/Room.js` | 房间管理 |
+| `game/GameManager.js` | 游戏管理器 |
+
+#### 5.5.3 启动服务
+
+```bash
+cd gomoku-server
+node index.js
+```
+
+### 5.6 步骤六：测试与优化
+
+- 检查 WebSocket 连接稳定性
+- 验证联机对战同步
+- 验证倒计时和超时判负
+- 优化网络延迟体验
 
 ---
 
@@ -205,10 +311,12 @@ npm install
 ### 6.1 功能验收
 
 - [ ] 15×15 棋盘正确显示
-- [ ] 黑方先行
-- [ ] 点击交叉点可落子
+- [ ] 创建/加入房间功能
+- [ ] 两人联机对战同步
 - [ ] 轮流下棋正确切换
 - [ ] 五连判断正确
+- [ ] 2分钟倒计时显示
+- [ ] 超时判负正确
 - [ ] 获胜后显示胜利信息
 - [ ] 重新开始功能正常
 
@@ -217,6 +325,7 @@ npm install
 - [ ] 棋盘为木质/温暖色调
 - [ ] 棋子具有3D立体感
 - [ ] 落子有动画效果
+- [ ] 倒计时显示清晰
 - [ ] 响应式布局正常
 - [ ] 整体美观协调
 
@@ -234,8 +343,18 @@ npm install
 
 ## 关键文件路径
 
+### 前端
+
 - `gomoku/index.html` - 入口页面
 - `gomoku/src/App.vue` - 主组件
 - `gomoku/src/components/GameBoard.vue` - 棋盘组件
 - `gomoku/src/composables/gameLogic.js` - 游戏逻辑
+- `gomoku/src/composables/websocket.js` - WebSocket 连接
 - `gomoku/src/style.css` - 全局样式
+
+### 后端
+
+- `gomoku-server/index.js` - 服务入口
+- `gomoku-server/game/Game.js` - 游戏逻辑
+- `gomoku-server/game/Room.js` - 房间类
+- `gomoku-server/game/GameManager.js` - 游戏管理器

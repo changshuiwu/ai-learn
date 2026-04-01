@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebSearch",
+      "Bash(find D:/own-project/ai-learn/gomoku -type f -name *.js -o -name *.vue -o -name *.json)"
     ]
   }
 }

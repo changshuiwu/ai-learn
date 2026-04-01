@@ -33,6 +33,10 @@ const props = defineProps({
   winningPieces: {
     type: Array,
     default: () => []
+  },
+  canPlay: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -268,7 +272,7 @@ function drawHoverPreview() {
 
 // 处理点击
 function handleClick(e) {
-  if (props.gameOver) return
+  if (props.gameOver || !props.canPlay) return
 
   const { x, y } = getGridPos(e)
   if (x === null || y === null) return
