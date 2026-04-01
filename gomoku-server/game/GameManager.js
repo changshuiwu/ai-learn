@@ -1,63 +1,67 @@
-import { Room } from './Room.js'
-import { generateRoomId } from './utils.js'
+import { Room } from "./Room.js";
+import { generateRoomId } from "./utils.js";
+
+let wss = null;
+
+export function setWss(server) {
+  wss = server;
+}
 
 export class GameManager {
   constructor() {
-    this.rooms = new Map() // roomId -> Room
+    this.rooms = new Map();
   }
 
   createRoom() {
-    let roomId
+    let roomId;
     do {
-      roomId = generateRoomId()
-    } while (this.rooms.has(roomId))
+      roomId = generateRoomId();
+    } while (this.rooms.has(roomId));
 
-    const room = new Room(roomId)
-    this.rooms.set(roomId, room)
+    const room = new Room(roomId);
+    this.rooms.set(roomId, room);
 
-    return room
+    return room;
   }
 
   getRoom(roomId) {
-    return this.rooms.get(roomId)
-  }
-
-  joinRoom(roomId) {
-    const room = this.rooms.get(roomId)
-    if (!room) return null
-    if (room.isFull()) return null
-
-    return room
+    return this.rooms.get(roomId);
   }
 
   deleteRoom(roomId) {
-    const room = this.rooms.get(roomId)
+    const room = this.rooms.get(roomId);
     if (room) {
-      room.destroy()
-      this.rooms.delete(roomId)
+      room.destroy();
+      this.rooms.delete(roomId);
     }
   }
 
-  findRoomByWs(ws) {
-    for (const room of this.rooms.values()) {
-      if (room.getPlayer(ws)) {
-        return room
+  removePlayer(userId) {
+    for (const [roomId, room] of this.rooms) {
+      const player = room.players.find((p) => p.id === userId);
+      if (player) {
+        room.removePlayer(userId);
+        if (room.players.length === 0) {
+          this.deleteRoom(roomId);
+        }
+        return player;
       }
     }
-    return null
+    return null;
   }
 
-  removePlayer(ws) {
-    const room = this.findRoomByWs(ws)
-    if (!room) return
+  broadcast(roomId, message) {
+    if (!wss) return;
 
-    const player = room.removePlayer(ws)
+    const room = this.rooms.get(roomId);
+    if (!room) return;
 
-    // 如果房间空了，删除房间
-    if (room.playerList.length === 0) {
-      this.deleteRoom(room.roomId)
-    }
+    const messageStr = JSON.stringify(message);
 
-    return player
+    wss.clients.forEach((client) => {
+      if (client.readyState === 1) {
+        client.send(messageStr);
+      }
+    });
   }
 }

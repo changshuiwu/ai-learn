@@ -3,7 +3,11 @@
     "allow": [
       "Bash(npm install:*)",
       "WebSearch",
-      "Bash(find D:/own-project/ai-learn/gomoku -type f -name *.js -o -name *.vue -o -name *.json)"
+      "Bash(find D:/own-project/ai-learn/gomoku -type f -name *.js -o -name *.vue -o -name *.json)",
+      "Bash(npm run:*)",
+      "Bash(netstat -ano)",
+      "Bash(node -e \"import\\(''./game/User.js''\\).then\\(m => m.initDB\\(\\)\\).catch\\(console.error\\)\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

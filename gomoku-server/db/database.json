@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "id": 1775030186422,
+      "username": "test",
+      "password": "test123456",
+      "createdAt": "2026-04-01T07:56:26.423Z"
+    },
+    {
+      "id": 1775030335118,
+      "username": "wcs",
+      "password": "123456",
+      "createdAt": "2026-04-01T07:58:55.118Z"
+    },
+    {
+      "id": 1775030368729,
+      "username": "wcs1",
+      "password": "123456",
+      "createdAt": "2026-04-01T07:59:28.729Z"
+    }
+  ]
+}

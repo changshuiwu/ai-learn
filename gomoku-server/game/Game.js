@@ -17,6 +17,7 @@ export class Game {
   constructor() {
     this.board = this.createEmptyBoard()
     this.currentPlayer = BLACK
+    this.firstPlayer = BLACK // 随机先手
     this.gameOver = false
     this.winner = null
     this.pieceCount = 0
@@ -127,7 +128,7 @@ export class Game {
 
   reset() {
     this.board = this.createEmptyBoard()
-    this.currentPlayer = BLACK
+    this.currentPlayer = this.firstPlayer
     this.gameOver = false
     this.winner = null
     this.pieceCount = 0

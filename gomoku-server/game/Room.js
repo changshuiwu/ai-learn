@@ -1,58 +1,56 @@
 import { Game } from './Game.js'
 import { generateRoomId } from './utils.js'
 
-// 倒计时时间（毫秒）
 const TIMEOUT_MS = 2 * 60 * 1000 // 2分钟
 
 export class Room {
   constructor(roomId) {
     this.roomId = roomId
     this.game = new Game()
-    this.players = {} // { ws: { name, color } }
-    this.playerList = [] // [{ ws, name, color }]
+    this.players = [] // [{ id, username, color }]
     this.timer = null
     this.timeRemaining = TIMEOUT_MS
   }
 
-  addPlayer(ws, playerName) {
-    if (this.playerList.length >= 2) {
+  addPlayer(user) {
+    if (this.players.length >= 2) {
       return { success: false, error: '房间已满' }
     }
 
-    const color = this.playerList.length === 0 ? 'black' : 'white'
-    const player = { ws, name: playerName, color }
+    const color = this.players.length === 0 ? 'black' : 'white'
+    const player = { ...user, color }
 
-    this.players[ws] = player
-    this.playerList.push(player)
+    this.players.push(player)
 
-    return { success: true, color, isFull: this.playerList.length === 2 }
+    return { success: true, color, isFull: this.players.length >= 2 }
   }
 
-  removePlayer(ws) {
-    const player = this.players[ws]
-    if (!player) return null
-
-    delete this.players[ws]
-    this.playerList = this.playerList.filter(p => p.ws !== ws)
-
-    this.stopTimer()
-    return player
+  hasUser(userId) {
+    return this.players.some(p => p.id === userId)
   }
 
-  getPlayer(ws) {
-    return this.players[ws]
+  getUserColor(userId) {
+    const player = this.players.find(p => p.id === userId)
+    return player?.color
   }
 
-  getPlayerByColor(color) {
-    return this.playerList.find(p => p.color === color)
+  getHost() {
+    return this.players[0]
+  }
+
+  removePlayer(userId) {
+    const index = this.players.findIndex(p => p.id === userId)
+    if (index === -1) return null
+
+    return this.players.splice(index, 1)[0]
   }
 
   isFull() {
-    return this.playerList.length >= 2
+    return this.players.length >= 2
   }
 
-  placePiece(x, y, ws) {
-    const player = this.players[ws]
+  placePiece(x, y, userId) {
+    const player = this.players.find(p => p.id === userId)
     if (!player) return { success: false, error: '不在房间中' }
 
     const currentColor = this.game.currentPlayer
@@ -64,11 +62,12 @@ export class Room {
       return { success: false, error: '游戏已结束' }
     }
 
+    // 重置倒计时（给下一个玩家）
+    this.resetTimer()
+
     const success = this.game.placePiece(x, y)
 
     if (success) {
-      this.resetTimer()
-
       return {
         success: true,
         gameState: this.game.getState()
@@ -87,7 +86,6 @@ export class Room {
 
       if (this.timeRemaining <= 0) {
         this.stopTimer()
-        // 超时判负
         this.game.gameOver = true
         this.game.winner = this.game.currentPlayer === 'black' ? 'white' : 'black'
 
@@ -116,12 +114,10 @@ export class Room {
     return this.timeRemaining
   }
 
-  broadcast(message, excludeWs = null) {
-    for (const player of this.playerList) {
-      if (player.ws !== excludeWs && player.ws.readyState === 1) {
-        player.ws.send(JSON.stringify(message))
-      }
-    }
+  broadcast(message) {
+    // 通过全局 wss 发送（这里简化处理）
+    // 实际应该通过连接的 WebSocket 发送
+    globalThis.broadcast?.(message, this.roomId)
   }
 
   destroy() {

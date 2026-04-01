@@ -1,11 +1,9 @@
 import { ref } from 'vue'
 
-// WebSocket 服务地址
 const WS_URL = () => {
-  // 开发环境使用代理，生产环境使用当前主机
   const isDev = import.meta.env.DEV
   if (isDev) {
-    return `ws://localhost:3001`
+    return 'ws://localhost:3000/ws'
   }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}`
@@ -15,17 +13,10 @@ export function useWebSocket() {
   const ws = ref(null)
   const connected = ref(false)
   const error = ref(null)
-
-  // 房间信息
   const roomId = ref(null)
-  const playerColor = ref(null)
-  const wsPlayerName = ref(null)
-
-  // 消息回调
   const messageHandlers = ref({})
 
-  // 连接 WebSocket
-  function connect() {
+  function connect(user) {
     return new Promise((resolve, reject) => {
       try {
         ws.value = new WebSocket(WS_URL())
@@ -34,6 +25,8 @@ export function useWebSocket() {
           console.log('WebSocket 已连接')
           connected.value = true
           error.value = null
+          // 发送登录
+          ws.value.send(JSON.stringify({ type: 'login_ws', user }))
           resolve()
         }
 
@@ -63,102 +56,70 @@ export function useWebSocket() {
     })
   }
 
-  // 处理消息
   function handleMessage(message) {
     const { type } = message
-    console.log('收到消息:', type, message)
+    console.log('收到:', type, message)
 
     switch (type) {
-      case 'connected':
-        // 连接成功，等待后续消息
-        break
-
+      case 'login_ok':
       case 'room_created':
-        roomId.value = message.roomId
-        playerColor.value = message.playerColor
-        wsPlayerName.value = message.playerName
-        dispatch('room_created', message)
+        dispatch(type, message)
         break
-
       case 'room_joined':
         roomId.value = message.roomId
-        playerColor.value = message.playerColor
-        wsPlayerName.value = message.playerName
-        dispatch('room_joined', message)
+        localStorage.setItem('roomId', message.roomId)
+        localStorage.setItem('myColor', message.color)
+        dispatch(type, message)
         break
-
       case 'player_joined':
-        dispatch('player_joined', message)
-        break
-
       case 'game_start':
-        dispatch('game_start', message)
-        break
-
       case 'piece_placed':
-        dispatch('piece_placed', message)
-        break
-
-      case 'game_over':
-        dispatch('game_over', message)
-        break
-
-      case 'player_timeout':
-        dispatch('player_timeout', message)
-        break
-
-      case 'timer_start':
       case 'timer_update':
-      case 'timer_sync':
-        dispatch('timer', message)
+      case 'game_over':
+      case 'player_timeout':
+        dispatch(type, message)
         break
-
       case 'error':
         error.value = message.message
-        dispatch('error', message)
+        dispatch(type, message)
         break
-
       case 'player_left':
-        dispatch('player_left', message)
+        dispatch(type, message)
         break
-
-      default:
-        console.log('未知消息类型:', type)
     }
   }
 
-  // 发送消息
   function send(message) {
     if (!ws.value || ws.value.readyState !== WebSocket.OPEN) {
       console.error('WebSocket 未连接')
       return false
     }
-
     ws.value.send(JSON.stringify(message))
     return true
   }
 
-  // 创建房间
-  function createRoom(name) {
-    return send({ type: 'create_room', playerName: name })
+  function createRoom(user) {
+    roomId.value = null
+    send({ type: 'create_room', user })
   }
 
-  // 加入房间
-  function joinRoom(id, name) {
-    return send({ type: 'join_room', roomId: id, playerName: name })
+  function joinRoom(roomId, user) {
+    roomId.value = roomId
+    send({ type: 'join_room', roomId, user })
   }
 
-  // 落子
   function placePiece(x, y) {
-    return send({ type: 'place_piece', x, y })
+    send({ type: 'place_piece', x, y })
   }
 
-  // 重新开始
   function restart() {
-    return send({ type: 'restart' })
+    send({ type: 'restart' })
   }
 
-  // 断开连接
+  function leaveRoom() {
+    send({ type: 'leave_room' })
+  }
+
   function disconnect() {
     if (ws.value) {
       ws.value.close()
@@ -166,10 +127,8 @@ export function useWebSocket() {
     }
     connected.value = false
     roomId.value = null
-    playerColor.value = null
   }
 
-  // 注册消息回调
   function on(type, handler) {
     if (!messageHandlers.value[type]) {
       messageHandlers.value[type] = []
@@ -177,7 +136,6 @@ export function useWebSocket() {
     messageHandlers.value[type].push(handler)
   }
 
-  // 触发回调
   function dispatch(type, data) {
     const handlers = messageHandlers.value[type]
     if (handlers) {
@@ -186,18 +144,15 @@ export function useWebSocket() {
   }
 
   return {
-    // 状态
     connected,
     error,
     roomId,
-    playerColor,
-
-    // 方法
     connect,
     createRoom,
     joinRoom,
     placePiece,
     restart,
+    leaveRoom,
     disconnect,
     on
   }

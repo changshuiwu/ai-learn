@@ -1,11 +1,11 @@
 <template>
-  <div class="board-wrapper" ref="boardWrapper">
+  <div ref="boardWrapper" class="board-wrapper">
     <canvas
       ref="canvas"
       @click="handleClick"
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
-    ></canvas>
+    />
   </div>
 </template>
 
@@ -153,9 +153,15 @@ function drawGrid() {
 // 绘制星位点
 function drawStarPoints() {
   const starPoints = [
-    [3, 3], [3, 7], [3, 11],
-    [7, 3], [7, 7], [7, 11],
-    [11, 3], [11, 7], [11, 11]
+    [3, 3],
+    [3, 7],
+    [3, 11],
+    [7, 3],
+    [7, 7],
+    [7, 11],
+    [11, 3],
+    [11, 7],
+    [11, 11]
   ]
 
   ctx.fillStyle = colors.line
@@ -189,7 +195,14 @@ function drawPiece(gridX, gridY, color) {
 
   if (color === BLACK) {
     // 黑子
-    const gradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius)
+    const gradient = ctx.createRadialGradient(
+      cx - radius * 0.3,
+      cy - radius * 0.3,
+      radius * 0.1,
+      cx,
+      cy,
+      radius
+    )
     gradient.addColorStop(0, '#4a4a4a')
     gradient.addColorStop(0.5, '#2a2a2a')
     gradient.addColorStop(1, colors.black)
@@ -206,7 +219,14 @@ function drawPiece(gridX, gridY, color) {
     ctx.fill()
   } else {
     // 白子
-    const gradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius)
+    const gradient = ctx.createRadialGradient(
+      cx - radius * 0.3,
+      cy - radius * 0.3,
+      radius * 0.1,
+      cx,
+      cy,
+      radius
+    )
     gradient.addColorStop(0, '#ffffff')
     gradient.addColorStop(0.5, '#f0f0f0')
     gradient.addColorStop(1, '#dddddd')
@@ -251,7 +271,7 @@ function drawHoverPreview() {
   if (!hoverPos.value) return
 
   const { x, y } = hoverPos.value
-  if (props.board[y][x] !== EMPTY) return
+  if (props.board?.[y]?.[x] !== EMPTY) return
 
   const cx = padding + x * cellSize.value
   const cy = padding + y * cellSize.value
