@@ -2,9 +2,13 @@ import { ref } from 'vue'
 
 // WebSocket 服务地址
 const WS_URL = () => {
+  // 开发环境使用代理，生产环境使用当前主机
+  const isDev = import.meta.env.DEV
+  if (isDev) {
+    return `ws://localhost:3001`
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const host = window.location.host
-  return `${protocol}//${host}`
+  return `${protocol}//${window.location.host}`
 }
 
 export function useWebSocket() {
@@ -15,7 +19,7 @@ export function useWebSocket() {
   // 房间信息
   const roomId = ref(null)
   const playerColor = ref(null)
-  const playerName = ref(null)
+  const wsPlayerName = ref(null)
 
   // 消息回调
   const messageHandlers = ref({})
@@ -72,14 +76,14 @@ export function useWebSocket() {
       case 'room_created':
         roomId.value = message.roomId
         playerColor.value = message.playerColor
-        playerName.value = message.playerName
+        wsPlayerName.value = message.playerName
         dispatch('room_created', message)
         break
 
       case 'room_joined':
         roomId.value = message.roomId
         playerColor.value = message.playerColor
-        playerName.value = message.playerName
+        wsPlayerName.value = message.playerName
         dispatch('room_joined', message)
         break
 
