@@ -17,6 +17,35 @@
       "username": "wcs1",
       "password": "123456",
       "createdAt": "2026-04-01T07:59:28.729Z"
+    },
+    {
+      "id": 1775031247285,
+      "username": "张三三",
+      "password": "123456",
+      "createdAt": "2026-04-01T08:14:07.285Z"
+    },
+    {
+      "id": 1775031269364,
+      "username": "李思思",
+      "password": "123456",
+      "createdAt": "2026-04-01T08:14:29.364Z"
+    }
+  ],
+  "sessions": [],
+  "rooms": [
+    {
+      "roomId": "KDHP5R",
+      "creatorId": 1775031247285,
+      "creatorUsername": "张三三",
+      "status": "playing",
+      "createdAt": "2026-04-02T02:38:01.976Z"
+    },
+    {
+      "roomId": "RMH8MH",
+      "creatorId": 1775031247285,
+      "creatorUsername": "张三三",
+      "status": "playing",
+      "createdAt": "2026-04-02T03:08:06.301Z"
     }
   ]
 }

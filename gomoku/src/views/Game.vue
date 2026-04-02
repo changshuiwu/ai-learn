@@ -64,6 +64,11 @@ const {
   disconnect
 } = useWebSocket()
 
+// 使用固定 key
+const ROOM_KEY = 'gomoku_room'
+const COLOR_KEY = 'gomoku_color'
+const USER_KEY = 'gomoku_user'
+
 const board = ref(createEmptyBoard())
 const currentPlayer = ref(BLACK)
 const gameOver = ref(false)
@@ -75,7 +80,7 @@ const user = ref(null)
 const myColor = ref('')
 const opponentName = ref('对手')
 const myName = ref('')
-const opponentColor = computed(() => myColor.value === BLACK ? WHITE : BLACK)
+const opponentColor = computed(() => (myColor.value === BLACK ? WHITE : BLACK))
 
 const myTime = ref(2 * 60 * 1000)
 const opponentTime = ref(2 * 60 * 1000)
@@ -92,7 +97,10 @@ const isWinner = computed(() =>
   (winner.value === 'timeout' || winner.value === myColor.value)
 )
 const isLoser = computed(() =>
-  gameOver.value && winner.value && winner.value !== myColor.value && winner.value !== 'timeout'
+  gameOver.value &&
+  winner.value &&
+  winner.value !== myColor.value &&
+  winner.value !== 'timeout'
 )
 
 function createEmptyBoard() {
@@ -118,8 +126,8 @@ function handleRestart() {
 
 function handleExit() {
   disconnect()
-  localStorage.removeItem('roomId')
-  localStorage.removeItem('myColor')
+  localStorage.removeItem(ROOM_KEY)
+  localStorage.removeItem(COLOR_KEY)
   router.push('/home')
 }
 
@@ -138,9 +146,9 @@ function resetGame() {
 let timerInterval = null
 
 onMounted(() => {
-  user.value = JSON.parse(localStorage.getItem('user') || '{}')
+  user.value = JSON.parse(localStorage.getItem(USER_KEY) || '{}')
   myName.value = user.value.username
-  myColor.value = localStorage.getItem('myColor') || ''
+  myColor.value = localStorage.getItem(COLOR_KEY) || ''
 
   on('game_start', (msg) => {
     if (msg.gameState) {

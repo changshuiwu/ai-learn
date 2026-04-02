@@ -45,6 +45,9 @@ import { useWebSocket } from '../composables/websocket.js'
 const router = useRouter()
 const { login: wsLogin } = useWebSocket()
 
+// 存储 key：直接使用固定的 key，因为用户登录后只会有一个身份
+const STORAGE_KEY = 'gomoku_user'
+
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -68,7 +71,7 @@ async function handleLogin() {
     const data = await res.json()
 
     if (data.success) {
-      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user))
       router.push('/home')
     } else {
       error.value = data.error
@@ -98,7 +101,7 @@ async function handleRegister() {
     const data = await res.json()
 
     if (data.success) {
-      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user))
       router.push('/home')
     } else {
       error.value = data.error

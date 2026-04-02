@@ -39,13 +39,18 @@ import { useWebSocket } from '../composables/websocket.js'
 const router = useRouter()
 const { on, createRoom: wsCreateRoom, joinRoom: wsJoinRoom, connect, disconnect } = useWebSocket()
 
+// 使用固定 key 存储用户信息
+const STORAGE_KEY = 'gomoku_user'
+const ROOM_KEY = 'gomoku_room'
+const COLOR_KEY = 'gomoku_color'
+
 const user = ref(null)
 const roomId = ref('')
 const loading = ref(false)
 const error = ref('')
 
 onMounted(() => {
-  const stored = localStorage.getItem('user')
+  const stored = localStorage.getItem(STORAGE_KEY)
   if (stored) {
     user.value = JSON.parse(stored)
   } else {
@@ -53,15 +58,15 @@ onMounted(() => {
   }
 
   on('room_created', (msg) => {
-    localStorage.setItem('roomId', msg.roomId)
-    localStorage.setItem('myColor', msg.color)
+    localStorage.setItem(ROOM_KEY, msg.roomId)
+    localStorage.setItem(COLOR_KEY, msg.color)
     loading.value = false
-    router.push(`/room/${msg.roomId}`)
+    router.push('/room/' + msg.roomId)
   })
 
   on('room_joined', (msg) => {
-    localStorage.setItem('roomId', msg.roomId)
-    localStorage.setItem('myColor', msg.color)
+    localStorage.setItem(ROOM_KEY, msg.roomId)
+    localStorage.setItem(COLOR_KEY, msg.color)
     loading.value = false
     router.push('/game')
   })
@@ -104,7 +109,7 @@ async function handleJoinRoom() {
 }
 
 function handleLogout() {
-  localStorage.removeItem('user')
+  localStorage.removeItem(STORAGE_KEY)
   disconnect()
   router.push('/')
 }

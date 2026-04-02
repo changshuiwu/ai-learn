@@ -10,13 +10,13 @@
       </div>
 
       <div class="color-info">
-        你的执子：<span :class="['color', myColor]">{{ myColor === 'black' ? '黑方' : '白方' }}</span>
+        你的执子：<span :class="['color', myColor]">{{
+          myColor === 'black' ? '黑方' : '白方'
+        }}</span>
       </div>
 
       <div class="waiting">
-        <span class="dots">
-          <span></span><span></span><span></span>
-        </span>
+        <span class="dots"> <span /><span /><span /> </span>
         等待对手中...
       </div>
 
@@ -34,24 +34,48 @@ import { useWebSocket } from '../composables/websocket.js'
 
 const router = useRouter()
 const route = useRoute()
-const { on, disconnect } = useWebSocket()
+const { on, disconnect, connect, connected } = useWebSocket()
+
+// 使用固定 key
+const STORAGE_KEY = 'gomoku_user'
+const ROOM_KEY = 'gomoku_room'
+const COLOR_KEY = 'gomoku_color'
 
 const roomId = ref('')
 const myColor = ref('')
 const copied = ref(false)
 const gameStarted = ref(false)
+const user = ref(null)
 
-onMounted(() => {
-  roomId.value = route.params.roomId || localStorage.getItem('roomId') || ''
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  myColor.value = localStorage.getItem('myColor') || ''
+onMounted(async () => {
+  roomId.value = route.params.roomId || localStorage.getItem(ROOM_KEY) || ''
+  user.value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+  myColor.value = localStorage.getItem(COLOR_KEY) || ''
 
-  if (!roomId.value) {
+  if (!roomId.value || !user.value.username) {
     router.push('/home')
+    return
   }
 
+  // 确保 WebSocket 已连接
+  if (!connected.value) {
+    try {
+      await connect(user.value)
+    } catch (e) {
+      console.error('WebSocket 连接失败:', e)
+      alert('连接失败')
+      router.push('/home')
+      return
+    }
+  }
+
+  // 对手加入
   on('player_joined', () => {
-    gameStarted.value = true
+    // 等待 game_start
+  })
+
+  // 游戏开始（双方都监听这个）
+  on('game_start', () => {
     router.push('/game')
   })
 
@@ -64,13 +88,11 @@ onMounted(() => {
 function copyRoomId() {
   navigator.clipboard.writeText(roomId.value)
   copied.value = true
-  setTimeout(() => copied.value = false, 2000)
+  setTimeout(() => (copied.value = false), 2000)
 }
 
 function handleCancel() {
   disconnect()
-  localStorage.removeItem('roomId')
-  localStorage.removeItem('myColor')
   router.push('/home')
 }
 </script>
@@ -165,13 +187,27 @@ function handleCancel() {
   animation: bounce 1.4s infinite ease-in-out;
 }
 
-.dots span:nth-child(1) { animation-delay: 0s; }
-.dots span:nth-child(2) { animation-delay: 0.2s; }
-.dots span:nth-child(3) { animation-delay: 0.4s; }
+.dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes bounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .btn-cancel {
